@@ -1,6 +1,6 @@
-const INTERVAL_KEY = "INTERVAL_KEY";
+const PERCENTAGE_KEY = "PERCENTAGE_KEY"
 // default to 1s refresh window
-const DEFAULT_INTERVAL = "1000";
+const DEFAULT_PERCENTAGE = "2"
 
 const NICS = [
     "https://images.wired.it/gallery/131607/Big/37493d96-2b60-4164-b730-cc0717c36f18.jpeg", // supes
@@ -22,7 +22,6 @@ const NICS = [
     "https://www.internerdz.com.br/wp-content/uploads/2019/09/Nicolas-Cage-backgrounds-ultra-hd.png", // cowboy cage
     "https://c4.wallpaperflare.com/wallpaper/46/357/191/movie-face-off-nicolas-cage-wallpaper-thumb.jpg", // bless up
     "https://i0.wp.com/www.cinezapping.com/wp-content/uploads/2010/08/Nicolas-Cage-ne-Lapprendista-stregone.jpg", // a magician through and through
-    "https://www.talkingdrugs.org/sites/default/files/images/cage-wicker-man.jpg", // hello bees!
     "https://c4.wallpaperflare.com/wallpaper/325/762/565/nicolas-cage-wallpaper-preview.jpg", // viKING
     "https://multiglom.files.wordpress.com/2015/01/wildcage01.jpg", // let's get crazy
     "https://4.bp.blogspot.com/_N91xwP-lKvw/TFjR4YQU1tI/AAAAAAAABk8/0VBlXRL3VBk/s1600/the+rock.jpg", // the real "the rock" were the nics you made along the way
@@ -33,10 +32,8 @@ const NICS = [
     "https://www.slashfilm.com/img/gallery/nicolas-cage-couldnt-land-a-david-lynch-cameo-for-the-unbearable-weight-of-massive-talent/the-nicolas-cagedavid-lynch-reunion-we-deserved-1650027163.jpg", // fist bump
     "https://i1.wp.com/film-book.com/wp-content/uploads/2017/04/nicolas-cage-windtalkers-01-600x350.jpg", // what does the wind say?
     "https://multiglom.files.wordpress.com/2015/01/the-rock-1996.jpg", // the guitar is only a guitar
-    "https://musingsfromus.com/wp-content/uploads/2012/09/Gone-In-60-Seconds-2000-ScreenShot-088.jpg", // 60 seems a bit long at this point...
     "https://assets.acasatv.ro/assets/acasatv/2010/05/07/image_galleries/2130/vampirii-fac-valva-la-hollywood-galerie-foto_12.jpg", // TEETH
     "https://multiglom.files.wordpress.com/2015/01/birdy.png", // i'm sad to see you hurt
-    "https://musingsfromus.com/wp-content/uploads/2012/07/National-Treasure-2004-ScreenShot-121.jpg", // you are a national treasure
     "https://3.bp.blogspot.com/-rng145WCKPQ/T6mi8M8Ho5I/AAAAAAAAAEc/CaZfH8dVLGA/s1600/WeatherMan06.jpg", // shot through the heart and you're to blame
     "https://de.web.img3.acsta.net/r_1280_720/medias/nmedia/18/35/51/53/18458294.jpg", // same
     "https://www.episodi.fi/wp-content/uploads/nicolas-cage-world-trade-center.jpg", // all nics are blessed
@@ -46,52 +43,84 @@ const NICS = [
     "https://www.yam-mag.com/wp-content/uploads/2012/05/nicholas-cage-kick-ass.jpg", // makeup is cool
 ]
 
+var percentage = 0
+
 function getNic() {
-    let nicNum = Math.floor(Math.random()*NICS.length);
-    return NICS[nicNum];
+    let nicNum = Math.floor(Math.random() * NICS.length)
+    return NICS[nicNum]
 }
 
-function replaceImages() {
-    for(let i = 0; i < document.images.length; ++i) {
-        let img = document.images[i];
+function replaceImage(img) {
+    if (img.classList.contains('nicced')) {
+        return
+    }
+    img.classList.add('nicced')
 
-        if(img.classList.contains('nicced')){
-            continue;
-        }
-        img.classList.add('nicced');
+    if (Math.random() * 100 > percentage) {
+        return
+    }
 
-        // attempt to retain the original dimensions
-        img.style.width = img.width + 'px';
-        img.style.height = img.height + 'px';
+    // attempt to retain the original dimensions
+    img.style.width = img.width + 'px'
+    img.style.height = img.height + 'px'
 
-        // nic-em
-        let loc = getNic()
-        img.src = loc;
-        if(img.srcset){
-            img.srcset = loc;
-        }
-    };
+    // nic-em
+    let loc = getNic()
+    img.src = loc
+    if (img.srcset) {
+        img.srcset = loc
+    }
 }
+
+function replaceAllImages() {
+    for (let i = 0; i < document.images.length; ++i) {
+        let img = document.images[i]
+        replaceImage(img)
+    }
+}
+
+function onMutation (records, observer) {
+    for (let record of records) {
+        for (let note of record.addedNodes) {
+            for (let img of note.getElementsByTagName('img')) {
+                replaceImage(img)
+            }
+        }
+    }
+}
+
+function onreadystatechange()
+{
+    if (document.readyState == 'interactive')
+    {
+        replaceAllImages()
+
+        let observer = new MutationObserver(onMutation)
+        observer.observe(document.body, {childList: true, subtree: true})
+    }
+};
 
 // setup defaults
-function get_interval_or_default(item) {
-    if (!item || item === {} || !(INTERVAL_KEY in item)) {
+function get_percentage_or_default(item) {
+    if (!item || !(PERCENTAGE_KEY in item)) {
         browser.storage.local.set({
-            INTERVAL_KEY: DEFAULT_INTERVAL
-        });
-        return DEFAULT_INTERVAL;
+            PERCENTAGE_KEY: DEFAULT_PERCENTAGE
+        })
+        return DEFAULT_PERCENTAGE
     } else {
-        return item[INTERVAL_KEY];
+        return item[PERCENTAGE_KEY]
     }
 }
 
 // start up the extension
 browser.storage.local.get().then(
     (item) => {
-        let interval = get_interval_or_default(item);
-        window.setInterval(replaceImages, interval);
+        percentage = get_percentage_or_default(item)
+        document.addEventListener("readystatechange", onreadystatechange)
+        window.setInterval(replaceAllImages, 500);
     },
     (_) => {
-        window.setInterval(replaceImages, DEFAULT_INTERVAL);
+        percentage = get_percentage_or_default(item)
+        document.addEventListener("readystatechange", onreadystatechange)
     }
-);
+)

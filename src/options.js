@@ -1,24 +1,24 @@
-const INTERVAL_KEY = "refresh-interval";
+const PERCENTAGE_KEY = "PERCENTAGE_KEY";
 // default to 1s refresh window
-const DEFAULT_INTERVAL = "1000";
+const DEFAULT_PERCENTAGE = "2";
 
-const MIN_INTERVAL = 500;
-const MAX_INTERVAL = 5000;
+const MIN_PERCENTAGE = 0;
+const MAX_PERCENTAGE = 100;
 
-function save_interval() {
-    let interval_setting = document.getElementById("interval-setting");
-    let interval = interval_setting.value;
-    let interval_num = Number(interval);
+function save_percentage() {
+    let percentage_setting = document.getElementById("percentage-setting");
+    let percentage = percentage_setting.value;
+    let percentage_num = Number(percentage);
 
-    if (interval_num < 500 || interval_num > 5000) {
+    if (percentage_num < MIN_PERCENTAGE || percentage_num > MAX_PERCENTAGE) {
         // revert to old storage
         browser.storage.local.get().then(
             (item) => {
-                let interval = get_interval_or_default(item);
-                document.getElementById("interval-setting").value = interval;
+                let percentage = get_percentage_or_default(item);
+                document.getElementById("percentage-setting").value = percentage;
             },
             (_) => {
-                document.getElementById("interval-setting").value = DEFAULT_INTERVAL;
+                document.getElementById("percentage-setting").value = DEFAULT_PERCENTAGE;
             }
         );
         return;
@@ -26,31 +26,31 @@ function save_interval() {
 
     // all clear, update the storage
     browser.storage.local.set({
-        INTERVAL_KEY: interval
+        PERCENTAGE_KEY: percentage
     });
 }
 
-function get_interval_or_default(item) {
-    if (!item || item === {} || !(INTERVAL_KEY in item)) {
+function get_percentage_or_default(item) {
+    if (!item || !(PERCENTAGE_KEY in item)) {
         browser.storage.local.set({
-            INTERVAL_KEY: DEFAULT_INTERVAL
+            PERCENTAGE_KEY: DEFAULT_PERCENTAGE
         });
-        return DEFAULT_INTERVAL;
+        return DEFAULT_PERCENTAGE;
     } else {
-        return item[INTERVAL_KEY];
+        return item[PERCENTAGE_KEY];
     }
 }
 
 // hook save button
-document.getElementById("save-button").addEventListener("click", save_interval);
+document.getElementById("save-button").addEventListener("click", save_percentage);
 
 // setup defaults
 browser.storage.local.get().then(
     (item) => {
-        let interval = get_interval_or_default(item);
-        document.getElementById("interval-setting").value = interval;
+        let percentage = get_percentage_or_default(item);
+        document.getElementById("percentage-setting").value = percentage;
     },
     (_) => {
-        document.getElementById("interval-setting").value = DEFAULT_INTERVAL;
+        document.getElementById("percentage-setting").value = DEFAULT_PERCENTAGE;
     }
 );
